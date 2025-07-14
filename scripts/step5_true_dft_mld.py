@@ -16,6 +16,7 @@ import numpy as np
 import time
 import os
 from datetime import datetime
+from typing import Tuple, Optional, Dict, List
 
 # Import GPAW for DFT calculations
 try:
