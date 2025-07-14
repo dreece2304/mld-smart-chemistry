@@ -1,0 +1,98 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+__conda_env__/
+
+# Scientific computing outputs
+*.xyz
+*.traj
+*.cube
+*.json
+outputs/
+results/
+calculations/
+*.log
+*.out
+*.gpw
+*.pckl
+
+# System files
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+.spyderproject
+.spyproject
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Installation logs
+*install*.log
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MLD specific
+trimethylaluminum_optimized.xyz
+water_optimized.xyz
+si_surface_optimized.xyz
+h2o_optimized.xyz
+tma_optimized.xyz
+
+# Keep structure files
+!structures/
+structures/*.xyz
+!structures/README.md
+
+# Keep template outputs for reference
+!example_outputs/

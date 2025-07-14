@@ -1,0 +1,39 @@
+# Minimal Core Requirements for MLD Simulations
+# These are the absolute essentials for thermal MLD calculations
+
+# Core Scientific Computing
+numpy>=1.21.0
+scipy>=1.7.0
+matplotlib>=3.5.0
+
+# Atomic Simulation Environment
+ase>=3.22.0
+
+# DFT Calculator
+gpaw>=22.8.0
+
+# Parallel Computing
+mpi4py>=3.1.0
+
+# Progress Tracking
+tqdm>=4.0.0
+
+# System Monitoring
+psutil>=5.8.0
+
+# Optional but Recommended
+# Structure Analysis
+pymatgen>=2023.1.0
+
+# Crystallography
+spglib>=2.0.0
+
+# Interactive Visualization (headless compatible)
+plotly>=5.0.0
+py3dmol>=2.0.0
+
+# Jupyter Integration (if using notebooks)
+nglview>=3.0.0
+
+# Note: OVITO excluded due to WSL2 Qt conflicts
+# Use web-based visualizers instead for WSL2
