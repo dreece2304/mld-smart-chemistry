@@ -29,6 +29,15 @@ except ImportError:
     GPAW_AVAILABLE = False
     print("❌ GPAW not available! Install with: pip install gpaw")
 
+# Import progress tracking and smart initial guess
+try:
+    from add_progress_to_dft import DFTProgress
+    from smart_initial_guess import InitialGuessOptimizer, smart_single_point
+    SMART_FEATURES = True
+except ImportError:
+    SMART_FEATURES = False
+    print("⚠️  Smart features not available - using basic mode")
+
 class SimpleDFTTest:
     """Ultra-simple DFT tests to verify setup"""
     
@@ -43,21 +52,32 @@ class SimpleDFTTest:
             'txt': None,               # Will be set per calculation
             'symmetry': 'off',         # Often safer
             'convergence': {
-                'energy': 1e-4,        # Loose convergence for testing
-                'density': 1e-3,
-                'eigenstates': 1e-3
+                'energy': 1e-3,        # Very loose convergence for testing
+                'density': 1e-2,
+                'eigenstates': 1e-2
             },
-            'mixer': {'beta': 0.05},   # Very conservative mixing
-            'maxiter': 100,            # Fewer iterations for testing
+            'mixer': {'beta': 0.01, 'nmaxold': 3},   # Very conservative mixing
+            'maxiter': 500,            # More iterations for difficult systems
+            'occupations': {'name': 'fermi-dirac', 'width': 0.1},  # Heavy smearing
             'nbands': 'nao'            # Automatic band count
         }
         
         # Size limits for testing
         self.MAX_TEST_ATOMS = 50
         
-        print("🧪 Simple DFT Test Suite")
-        print("   Testing DFT setup with minimal systems")
-        print("   Conservative parameters for reliability")
+        # Initialize progress tracking
+        if SMART_FEATURES:
+            self.progress = DFTProgress()
+            self.optimizer = InitialGuessOptimizer()
+            print("🧪 Smart DFT Test Suite")
+            print("   Testing DFT setup with minimal systems")
+            print("   Using smart initial guess and progress tracking")
+        else:
+            self.progress = None
+            self.optimizer = None
+            print("🧪 Simple DFT Test Suite")
+            print("   Testing DFT setup with minimal systems")
+            print("   Conservative parameters for reliability")
         
         if not GPAW_AVAILABLE:
             print("   ❌ GPAW not available - tests will fail")
@@ -102,7 +122,26 @@ class SimpleDFTTest:
         print(f"Atoms: {len(h2o)}")
         print(f"Cell size: {h2o.cell.diagonal()}")
         
-        # Set up DFT
+        # Use smart calculation if available
+        if SMART_FEATURES:
+            if self.progress:
+                self.progress.print_status("Starting H2O calculation with smart features...", 'info')
+            
+            success, energy, elapsed = smart_single_point(h2o, 'h2o_test')
+            
+            if success:
+                if self.progress:
+                    self.progress.print_status(f"H2O single point successful! Energy: {energy:.4f} eV", 'success')
+                print(f"   Time: {elapsed:.1f} seconds")
+                write('test_h2o_dft.xyz', h2o)
+                return True
+            else:
+                if self.progress:
+                    self.progress.print_status("H2O single point failed", 'error')
+                print(f"   Time: {elapsed:.1f} seconds")
+                return False
+        
+        # Fallback to basic calculation
         calc = self.create_dft_calculator('h2o_test')
         if calc is None:
             return False

@@ -15,6 +15,14 @@ from ase.io import write
 from ase.constraints import FixAtoms
 import numpy as np
 from typing import Tuple, List
+import time
+
+# Import progress tracking
+try:
+    from add_progress_to_dft import DFTProgress
+    PROGRESS_AVAILABLE = True
+except ImportError:
+    PROGRESS_AVAILABLE = False
 
 class SmallSurfaceGenerator:
     """Generate DFT-appropriate small surface models"""
@@ -31,10 +39,18 @@ class SmallSurfaceGenerator:
         self.SI_LATTICE = 5.431     # Å, experimental Si lattice
         self.VACUUM = 15.0          # Å, minimum for DFT
         
-        print("🔬 Small Surface Generator for DFT MLD")
-        print(f"   Target size: ~{self.TARGET_ATOMS} atoms")
-        print(f"   Maximum size: {self.MAX_ATOMS} atoms")
-        print(f"   Based on literature best practices")
+        # Initialize progress tracking
+        if PROGRESS_AVAILABLE:
+            self.progress = DFTProgress()
+            self.progress.print_status("🔬 Smart Surface Generator for DFT MLD", 'info')
+            self.progress.print_status(f"Target size: ~{self.TARGET_ATOMS} atoms", 'info')
+            self.progress.print_status(f"Maximum size: {self.MAX_ATOMS} atoms", 'info')
+        else:
+            self.progress = None
+            print("🔬 Small Surface Generator for DFT MLD")
+            print(f"   Target size: ~{self.TARGET_ATOMS} atoms")
+            print(f"   Maximum size: {self.MAX_ATOMS} atoms")
+            print(f"   Based on literature best practices")
     
     def create_si100_2x2_slab(self, layers: int = 4) -> Atoms:
         """
@@ -50,7 +66,10 @@ class SmallSurfaceGenerator:
         Returns:
             ASE Atoms object of clean Si(100) slab
         """
-        print(f"\n📐 Creating Si(100) 2×2 slab ({layers} layers)")
+        if self.progress:
+            self.progress.print_status(f"📐 Creating Si(100) 2×2 slab ({layers} layers)", 'info')
+        else:
+            print(f"\n📐 Creating Si(100) 2×2 slab ({layers} layers)")
         
         # Create Si(100) surface using ASE
         si_slab = surface('Si', (1, 0, 0), layers, vacuum=self.VACUUM)
@@ -70,12 +89,18 @@ class SmallSurfaceGenerator:
         
         si_slab.set_constraint(FixAtoms(mask=fix_mask))
         
-        print(f"   Atoms: {len(si_slab)}")
-        print(f"   Cell: {si_slab.cell[0,0]:.1f} × {si_slab.cell[1,1]:.1f} Å²")
-        print(f"   Fixed atoms: {n_fixed} (bottom layers)")
+        if self.progress:
+            self.progress.print_status(f"Created slab: {len(si_slab)} atoms, {n_fixed} fixed", 'success')
+        else:
+            print(f"   Atoms: {len(si_slab)}")
+            print(f"   Cell: {si_slab.cell[0,0]:.1f} × {si_slab.cell[1,1]:.1f} Å²")
+            print(f"   Fixed atoms: {n_fixed} (bottom layers)")
         
         if len(si_slab) > self.WARN_ATOMS:
-            print(f"   ⚠️  Warning: {len(si_slab)} atoms > {self.WARN_ATOMS}")
+            if self.progress:
+                self.progress.print_status(f"Warning: {len(si_slab)} atoms > {self.WARN_ATOMS}", 'warning')
+            else:
+                print(f"   ⚠️  Warning: {len(si_slab)} atoms > {self.WARN_ATOMS}")
         
         return si_slab
     
