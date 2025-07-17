@@ -29,7 +29,10 @@ except ImportError:
     GPAW_AVAILABLE = False
     print("❌ GPAW not available! Install with: pip install gpaw")
 
-from geometry_validator import GeometryValidator
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from scripts.geometry_validator import GeometryValidator
 
 class FastDFTMLDSimulator:
     """Fast DFT MLD simulator using pre-optimized structures"""
@@ -64,7 +67,7 @@ class FastDFTMLDSimulator:
         }
         
         # Pre-calculated energies storage
-        self.energy_cache_file = "pre_calculated_energies.json"
+        self.energy_cache_file = "config/pre_calculated_energies.json"
         self.energy_cache = self.load_energy_cache()
         
         # Initialize geometry validator
@@ -339,7 +342,7 @@ class FastDFTMLDSimulator:
         
         print("\n✅ Fast MLD simulation complete!")
         print("   Check *_optimized.xyz files for structures")
-        print("   Check pre_calculated_energies.json for energies")
+        print("   Check config/pre_calculated_energies.json for energies")
 
 def main():
     """Main execution"""

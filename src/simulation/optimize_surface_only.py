@@ -383,7 +383,7 @@ class SurfaceOptimizer:
             print(f"💾 Saved results: {results_file}")
             
             # Update pre_calculated_energies.json for dft_fast_mld.py
-            energy_cache_file = "pre_calculated_energies.json"
+            energy_cache_file = "config/pre_calculated_energies.json"
             energy_cache = {}
             if os.path.exists(energy_cache_file):
                 try:
