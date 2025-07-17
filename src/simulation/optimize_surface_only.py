@@ -23,12 +23,28 @@ import threading
 from tqdm import tqdm
 import sys
 
+# Performance optimization settings
+os.environ['OMP_NUM_THREADS'] = '12'
+os.environ['MKL_NUM_THREADS'] = '12'
+os.environ['NUMEXPR_NUM_THREADS'] = '12'
+os.environ['OMP_PLACES'] = 'cores'
+os.environ['OMP_PROC_BIND'] = 'close'
+os.environ['MKL_DYNAMIC'] = 'false'
+os.environ['GPAW_PYTHON_EGG_CACHE'] = '/tmp'
+
 try:
     from gpaw import GPAW, PW
     GPAW_AVAILABLE = True
 except ImportError:
     GPAW_AVAILABLE = False
     print("❌ GPAW not available! Install with: conda install -c conda-forge gpaw")
+
+# Try to enable GPU acceleration if available
+try:
+    from gpaw.gpu import GPU
+    GPU_AVAILABLE = True
+except ImportError:
+    GPU_AVAILABLE = False
 
 class DFTProgressMonitor:
     """Monitor DFT calculation progress"""
@@ -82,21 +98,33 @@ class SurfaceOptimizer:
     def __init__(self):
         """Initialize with optimized parameters for surfaces"""
         
-        # DFT parameters optimized for surface calculations
+        # DFT parameters optimized for high-performance surface calculations
         self.dft_params = {
-            'mode': PW(300),           # Moderate cutoff for surfaces
+            'mode': PW(400),           # Higher cutoff for better accuracy
             'xc': 'PBE',              # Standard for surfaces
-            'kpts': (1, 1, 1),        # Gamma point for slabs
+            'kpts': (2, 2, 1),        # Denser k-points for better accuracy
             'symmetry': 'off',        # Important for surfaces
             'convergence': {
                 'energy': 1e-5,
                 'density': 1e-4,
                 'eigenstates': 1e-4
             },
-            'mixer': {'beta': 0.15},   # Slightly higher for surfaces
+            'mixer': {'beta': 0.1, 'nmaxold': 8},  # Optimized for stability
             'maxiter': 300,
-            'nbands': 'nao'
+            'nbands': 'nao',
+            'parallel': {
+                'band': 2,             # Utilize multiple cores
+                'kpt': 1,
+                'domain': '(2, 2, 1)'
+            }
         }
+        
+        # Add GPU support if available
+        if GPU_AVAILABLE:
+            self.dft_params['gpu'] = GPU()
+            print("   🎮 GPU acceleration enabled")
+        else:
+            print("   💻 Using CPU-only calculations")
         
         # Optimization parameters
         self.opt_params = {

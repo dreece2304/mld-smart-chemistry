@@ -42,11 +42,11 @@ class FastDFTMLDSimulator:
         self.MAX_ATOMS = max_atoms
         self.WARN_ATOMS = max_atoms * 0.75
         
-        # Conservative DFT parameters
+        # High-performance DFT parameters
         self.dft_params = {
-            'mode': PW(300),
+            'mode': PW(400),           # Higher cutoff for better accuracy
             'xc': 'PBE',
-            'kpts': (1, 1, 1),
+            'kpts': (2, 2, 1),         # Better k-point sampling
             'txt': None,
             'symmetry': 'off',
             'convergence': {
@@ -54,10 +54,22 @@ class FastDFTMLDSimulator:
                 'density': 1e-4,
                 'eigenstates': 1e-4
             },
-            'mixer': {'beta': 0.1},
-            'maxiter': 300,
-            'nbands': 'nao'
+            'mixer': {'beta': 0.1, 'nmaxold': 6},
+            'maxiter': 180,
+            'nbands': 'nao',
+            'parallel': {
+                'band': 2,
+                'kpt': 1,
+                'domain': '(2, 2, 1)'
+            }
         }
+        
+        # Add GPU support if available
+        if GPU_AVAILABLE:
+            self.dft_params['gpu'] = GPU()
+            print("   🎮 GPU acceleration enabled for MLD simulation")
+        else:
+            print("   💻 Using CPU-only calculations")
         
         # Optimization parameters
         self.opt_params = {

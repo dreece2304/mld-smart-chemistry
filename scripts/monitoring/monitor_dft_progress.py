@@ -42,11 +42,12 @@ class DFTProgressMonitor:
     
     def __init__(self):
         self.console = Console() if RICH_AVAILABLE else None
-        self.scf_pattern = re.compile(r'iter:\s+(\d+)\s+.+')
+        # Updated patterns for GPAW output
+        self.scf_pattern = re.compile(r'iter:\s+(\d+)\s+(\d+:\d+:\d+)\s+([-\d.]+)')
         self.energy_pattern = re.compile(r'Free energy:\s+([-\d.]+)')
         self.force_pattern = re.compile(r'Maximum force:\s+([\d.]+)')
         self.opt_step_pattern = re.compile(r'Step=\s*(\d+)')
-        self.gpaw_scf_pattern = re.compile(r'(\d+)\s+([-\d.]+)\s+\d+\s+([-\d.]+)')
+        self.gpaw_scf_pattern = re.compile(r'iter:\s+(\d+)\s+(\d+:\d+:\d+)\s+([-\d.]+)')
         self.lbfgs_pattern = re.compile(r'LBFGS:\s+(\d+)\s+[\d:]+\s+([-\d.]+)\s+([\d.]+)')
         
     def parse_dft_file(self, filepath: str) -> Dict:
@@ -72,14 +73,16 @@ class DFTProgressMonitor:
                 lines = f.readlines()
                 
             for line in lines:
-                # Check for SCF iterations (GPAW style)
-                gpaw_match = self.gpaw_scf_pattern.search(line)
-                if gpaw_match:
-                    stats['scf_iter'] = int(gpaw_match.group(1))
-                    stats['scf_energy'] = float(gpaw_match.group(2))
+                # Check for SCF iterations (GPAW style: iter:   1 08:21:21  -660.451065)
+                scf_match = self.scf_pattern.search(line)
+                if scf_match:
+                    stats['scf_iter'] = int(scf_match.group(1))
+                    stats['scf_energy'] = float(scf_match.group(3))
+                    stats['scf_time'] = scf_match.group(2)
                     stats['scf_history'].append({
                         'iter': stats['scf_iter'],
-                        'energy': stats['scf_energy']
+                        'energy': stats['scf_energy'],
+                        'time': stats['scf_time']
                     })
                 
                 # Check for optimization steps (LBFGS)
@@ -203,6 +206,11 @@ class DFTProgressMonitor:
             
             if stats.get('scf_energy'):
                 energy_table.add_row("SCF Energy", f"{stats['scf_energy']:.6f} eV")
+            if stats.get('scf_iter') and stats.get('scf_time'):
+                energy_table.add_row("SCF Iteration", f"{stats['scf_iter']}/300 at {stats['scf_time']}")
+            if len(stats.get('scf_history', [])) > 1:
+                energy_change = stats['scf_history'][-1]['energy'] - stats['scf_history'][-2]['energy']
+                energy_table.add_row("Energy Change", f"{energy_change:.2e} eV")
             if opt_stats['exists'] and opt_stats['current_energy']:
                 energy_table.add_row("Total Energy", f"{opt_stats['current_energy']:.6f} eV")
             if opt_stats['exists'] and opt_stats['current_fmax']:
@@ -244,6 +252,13 @@ class DFTProgressMonitor:
             if stats.get('scf_energy'):
                 output.append(f"Energy: {stats['scf_energy']:.6f} eV")
                 
+            if stats.get('scf_time'):
+                output.append(f"SCF Time: {stats['scf_time']}")
+                
+            if len(stats.get('scf_history', [])) > 1:
+                energy_change = stats['scf_history'][-1]['energy'] - stats['scf_history'][-2]['energy']
+                output.append(f"Energy Change: {energy_change:.2e} eV")
+                
             if opt_stats['exists'] and opt_stats['steps']:
                 opt_bar = self.create_text_bar(opt_stats['current_step'], 100, 30)
                 output.append(f"Opt: {opt_bar} {opt_stats['current_step']}/100")
@@ -263,10 +278,10 @@ class DFTProgressMonitor:
     
     def monitor_calculation(self, dft_file: str, opt_log: str = None, refresh_rate: float = 1.0):
         """Monitor DFT calculation with live updates"""
-        print(f"Monitoring: {dft_file}")
+        print(f"🔍 Monitoring: {dft_file}")
         if opt_log:
-            print(f"Optimization log: {opt_log}")
-        print("Press Ctrl+C to stop monitoring\n")
+            print(f"📋 Optimization log: {opt_log}")
+        print("🔄 Press Ctrl+C to stop monitoring\n")
         
         if RICH_AVAILABLE:
             with Live(console=self.console, refresh_per_second=1/refresh_rate) as live:
